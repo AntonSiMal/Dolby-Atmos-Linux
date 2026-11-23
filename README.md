@@ -14,14 +14,14 @@ Colección de perfiles profesionales de procesamiento DSP para **Easy Effects** 
 
 ## 📦 Perfiles incluidos en el repositorio
 
-El proyecto separa el procesamiento acústico según el dispositivo de salida (ya que los audífonos requieren virtualización binaural HRTF y los altavoces requieren control de diafonía y sala):
+El proyecto separa el procesamiento acústico según el dispositivo de salida, ya que los audífonos requieren virtualización binaural HRTF y los altavoces requieren control de fase, diafonía y sala:
 
 | Archivo | Dispositivo | Versión | Arquitectura DSP |
 | :--- | :--- | :--- | :--- |
 | `Dolby Atmos Headphones.json` | 🎧 Audífonos | **Estable** | EQ 10 bandas + Bass Enhancer + Convolver + Reverb suave + Limiter. |
 | `Dolby Atmos Space.json` | 🔊 Altavoces | **Estable** | EQ + Bass Enhancer + Reverb de sala + Stereo Base + Limiter (sin convolver binaural). |
-| `Dolby Atmos Headphones (Beta).json` | 🎧 Audífonos | **Beta** | **Arquitectura avanzada:** EQ con filtros *Bell* calibrados (`-3.5 dB` *headroom*), Compresor Multibanda (*Volume Leveler*), separación **Mid/Side** (protege diálogos), Convolver HRTF y Limiter con *oversampling* (`-0.5 dB`). |
-| `Dolby Atmos Space (beta).json` | 🔊 Altavoces | **Beta** | **Arquitectura avanzada:** Filtro *High-Pass* en `32 Hz` + EQ balanceado (`-2.5 dB` *headroom*), realce armónico controlado (`45–80 Hz`), reverb corta (`0.45s` a `-26 dB`), expansión estéreo limpia (`0.2` sin retardo) y Limiter con *oversampling* (`-0.5 dB`). |
+| `Dolby Atmos Headphones (Beta).json` | 🎧 Audífonos | **Beta** | **Arquitectura calibrada:** EQ con filtros *Bell* (`-3.5 dB` *headroom*, claridad vocal en `1–2 kHz`), Bass Enhancer contenido (`30–75 Hz`), Compresor Multibanda con *sidechain* en `Middle`, Convolver HRTF (`wet: -2 dB`), Stereo Tools post-convolución (`side-level: 2.0`, `stereo-base: 0.2`, `delay: 0.0`) y Limiter con *oversampling* (`-0.5 dB`). |
+| `Dolby Atmos Space (beta).json` | 🔊 Altavoces | **Beta** | **Arquitectura calibrada:** Filtro *High-Pass* protector a `40 Hz` + EQ balanceado (`-2.5 dB` *headroom*), realce armónico controlado (`45–80 Hz`), reverb de sala pequeña (`0.45s` a `-26 dB`, `predelay: 12 ms`), expansión estéreo limpia (`side-level: 1.5`, `stereo-base: 0.2`, `delay: 0.0`) y Limiter con *oversampling* (`-0.5 dB`). |
 | `Dolby ATMOS ((128K MP3)) 1.Default.irs` | 🌌 Impulso | **Requerido** | Archivo de Respuesta al Impulso (IR) espacial utilizado por el plugin **Convolver** (activo en los perfiles de audífonos). |
 
 ---
@@ -51,7 +51,7 @@ chmod +x install.sh
 Al ejecutar `./install.sh` sin argumentos se abrirá un menú interactivo, o puedes pasar directamente cualquiera de estas banderas:
 
 * `./install.sh --stable` (o `-s`): Instala únicamente los perfiles **Estables** (`Headphones` y `Space`).
-* `./install.sh --beta` (o `-b`): Instala únicamente los perfiles **Beta** con arquitectura calibrada.
+* `./install.sh --beta` (o `-b`): Instala únicamente los perfiles **Beta** con la arquitectura calibrada.
 * `./install.sh --all` (o `-a`): Instala los **4 perfiles** para alternar y comparar entre ellos.
 
 ---
@@ -150,9 +150,9 @@ Distribuido bajo la **MIT License**. Úsalo bajo tu propia responsabilidad y man
 
 ```
 
-<ElicitationsGroup message="Para dejar el repositorio completamente terminado:">
+<ElicitationsGroup message="Si deseas añadir algún extra antes de hacer el commit final:">
   <Elicitation label="Agregar opción --uninstall al script install.sh" query="Agrega la opción --uninstall al menú y argumentos de install.sh para desinstalar los presets y el archivo .irs."/>
-  <Elicitation label="Crear plantilla de Pull Request / Issues" query="Genera una plantilla corta de Issues en Markdown para que los usuarios reporten pruebas de hardware con los presets Beta."/>
+  <Elicitation label="Crear plantilla de Issues para pruebas de hardware" query="Genera una plantilla corta de Issues en Markdown para que los usuarios reporten pruebas de hardware con los presets Beta."/>
 </ElicitationsGroup>
 
 ```
