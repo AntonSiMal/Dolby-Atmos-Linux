@@ -20,9 +20,9 @@ El proyecto separa el procesamiento acústico según el dispositivo de salida (y
 | :--- | :--- | :--- | :--- |
 | `Dolby Atmos Headphones.json` | 🎧 Audífonos | **Estable** | EQ 10 bandas + Bass Enhancer + Convolver + Reverb suave + Limiter. |
 | `Dolby Atmos Space.json` | 🔊 Altavoces | **Estable** | EQ + Bass Enhancer + Reverb de sala + Stereo Base + Limiter (sin convolver binaural). |
-| `Dolby Atmos Headphones (Beta).json` | 🎧 Audífonos | **Beta** | **Arquitectura avanzada:** EQ con filtros *Bell* calibrados (`-3.5 dB` *headroom*), Compresor Multibanda (*Volume Leveler*), separación **Mid/Side** (protege diálogos), Convolver HRTF y Limiter con *oversampling*. |
-| `Dolby Atmos Space (beta).json` | 🔊 Altavoces | **Beta** | **Arquitectura avanzada:** Filtro *High-Pass* en `32 Hz` (protege bocinas pequeñas), realce de graves armónicos (`45–90 Hz`), reverb corta (`0.4s`), expansión estéreo moderada (`0.3` + `0.2 ms` delay) y Limiter con *oversampling*. |
-| `Dolby ATMOS ((128K MP3)) 1.Default.irs` | 🌌 Impulso | **Requerido** | Archivo de Respuesta al Impulso (IR) espacial utilizado por el plugin **Convolver**. |
+| `Dolby Atmos Headphones (Beta).json` | 🎧 Audífonos | **Beta** | **Arquitectura avanzada:** EQ con filtros *Bell* calibrados (`-3.5 dB` *headroom*), Compresor Multibanda (*Volume Leveler*), separación **Mid/Side** (protege diálogos), Convolver HRTF y Limiter con *oversampling* (`-0.5 dB`). |
+| `Dolby Atmos Space (beta).json` | 🔊 Altavoces | **Beta** | **Arquitectura avanzada:** Filtro *High-Pass* en `32 Hz` + EQ balanceado (`-2.5 dB` *headroom*), realce armónico controlado (`45–80 Hz`), reverb corta (`0.45s` a `-26 dB`), expansión estéreo limpia (`0.2` sin retardo) y Limiter con *oversampling* (`-0.5 dB`). |
+| `Dolby ATMOS ((128K MP3)) 1.Default.irs` | 🌌 Impulso | **Requerido** | Archivo de Respuesta al Impulso (IR) espacial utilizado por el plugin **Convolver** (activo en los perfiles de audífonos). |
 
 ---
 
@@ -51,7 +51,7 @@ chmod +x install.sh
 Al ejecutar `./install.sh` sin argumentos se abrirá un menú interactivo, o puedes pasar directamente cualquiera de estas banderas:
 
 * `./install.sh --stable` (o `-s`): Instala únicamente los perfiles **Estables** (`Headphones` y `Space`).
-* `./install.sh --beta` (o `-b`): Instala únicamente los perfiles **Beta** con arquitectura Mid/Side y Compresor Multibanda.
+* `./install.sh --beta` (o `-b`): Instala únicamente los perfiles **Beta** con arquitectura calibrada.
 * `./install.sh --all` (o `-a`): Instala los **4 perfiles** para alternar y comparar entre ellos.
 
 ---
@@ -135,12 +135,10 @@ A partir de ese momento, Easy Effects alternará automáticamente entre ambos pe
 
 | Problema | Causa y Solución |
 | --- | --- |
-| **El plugin "Convolver" aparece en rojo o sin efecto** | El archivo `Dolby ATMOS ((128K MP3)) 1.Default.irs` no está en la carpeta `irs/` correspondiente (Nativa o Flatpak). Ejecuta `./install.sh` para copiarlo en la ruta correcta. |
+| **El plugin "Convolver" aparece en rojo o sin efecto** | El archivo `Dolby ATMOS ((128K MP3)) 1.Default.irs` no está en la carpeta `irs/` correspondiente (Nativa o Flatpak). Ejecuta `./install.sh` para copiarlo en la ruta correcta. *(Nota: En los perfiles `Space` para altavoces, el Convolver está desactivado intencionalmente para evitar cancelación de fase en bocinas).* |
 | **Un plugin aparece en gris / deshabilitado** | En instalaciones nativas faltan los motores LV2. Instala `lsp-plugins-lv2` y `calf-plugins` y reinicia el servicio con `easyeffects -q && easyeffects --gapplication-service &`. |
-| **Easy Effects no abre o no detecta audio** | Activa PipeWire en tu sesión:<br>
-
-<br>`systemctl --user --now enable pipewire pipewire-pulse wireplumber` y reinicia sesión. |
-| **Saturación en canciones con muchos graves** | En los perfiles Beta, el `input-gain` del ecualizador está calibrado a `-3.5 dB` con limitador en `-0.5 dB`. Si tu fuente de audio ya viene saturada, baja ligeramente el volumen de la aplicación reproductora. |
+| **Easy Effects no abre o no detecta audio** | Activa PipeWire en tu sesión ejecutando `systemctl --user --now enable pipewire pipewire-pulse wireplumber` y reinicia sesión. |
+| **Saturación en canciones con muchos graves** | En los perfiles Beta, el `input-gain` del ecualizador está calibrado (`-3.5 dB` en Headphones y `-2.5 dB` en Space) con limitador en `-0.5 dB`. Si tu fuente de audio ya viene saturada, baja ligeramente el volumen de la aplicación reproductora. |
 
 ---
 
@@ -152,7 +150,7 @@ Distribuido bajo la **MIT License**. Úsalo bajo tu propia responsabilidad y man
 
 ```
 
-<ElicitationsGroup message="Para terminar de pulir el repositorio:">
+<ElicitationsGroup message="Para dejar el repositorio completamente terminado:">
   <Elicitation label="Agregar opción --uninstall al script install.sh" query="Agrega la opción --uninstall al menú y argumentos de install.sh para desinstalar los presets y el archivo .irs."/>
   <Elicitation label="Crear plantilla de Pull Request / Issues" query="Genera una plantilla corta de Issues en Markdown para que los usuarios reporten pruebas de hardware con los presets Beta."/>
 </ElicitationsGroup>
