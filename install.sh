@@ -7,13 +7,17 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m' # Sin color
 
-# Lista exacta de presets en el repositorio
-PRESETS=(
+# Listas de presets del repositorio
+STABLE_PRESETS=(
     "Dolby Atmos Headphones.json"
-    "Dolby Atmos Headphones (Beta).json"
     "Dolby Atmos Space.json"
+)
+
+BETA_PRESETS=(
+    "Dolby Atmos Headphones (Beta).json"
     "Dolby Atmos Space (beta).json"
 )
 
@@ -33,18 +37,60 @@ if [[ ! -f "$SCRIPT_DIR/$IRS_FILE" ]]; then
     exit 1
 fi
 
-# 2. Validar que al menos exista un preset en la carpeta
+# 2. Selección de versión (por argumento o menú interactivo)
+CHOICE="${1:-}"
+
+if [[ -z "$CHOICE" ]]; then
+    echo -e "${CYAN}Selecciona qué versión de los presets deseas instalar:${NC}"
+    echo -e "  ${GREEN}1)${NC} Versión Estable  (Dolby Atmos Headphones & Space)"
+    echo -e "  ${YELLOW}2)${NC} Versión Beta     (Arquitectura avanzada Mid/Side + Compresor Multibanda)"
+    echo -e "  ${BLUE}3)${NC} Ambas versiones  (Instala los 4 perfiles)"
+    echo -e "  ${RED}4)${NC} Cancelar\n"
+    read -rp "Opción [1-4]: " OPTION
+
+    case "$OPTION" in
+        1) CHOICE="--stable" ;;
+        2) CHOICE="--beta" ;;
+        3) CHOICE="--all" ;;
+        4) echo -e "\n${YELLOW}Instalación cancelada.${NC}"; exit 0 ;;
+        *) echo -e "\n${RED}[ERROR] Opción no válida.${NC}"; exit 1 ;;
+    esac
+    echo ""
+fi
+
+SELECTED_PRESETS=()
+case "$CHOICE" in
+    --stable|-s)
+        SELECTED_PRESETS=("${STABLE_PRESETS[@]}")
+        echo -e "${GREEN}[*] Modo seleccionado: Versión Estable${NC}\n"
+        ;;
+    --beta|-b)
+        SELECTED_PRESETS=("${BETA_PRESETS[@]}")
+        echo -e "${YELLOW}[*] Modo seleccionado: Versión Beta${NC}\n"
+        ;;
+    --all|-a)
+        SELECTED_PRESETS=("${STABLE_PRESETS[@]}" "${BETA_PRESETS[@]}")
+        echo -e "${BLUE}[*] Modo seleccionado: Todas las versiones (Estable + Beta)${NC}\n"
+        ;;
+    *)
+        echo -e "${RED}[ERROR] Parámetro desconocido:${NC} $CHOICE"
+        echo -e "Uso: ./install.sh [--stable | --beta | --all]"
+        exit 1
+        ;;
+esac
+
+# 3. Validar que los archivos seleccionados existan en el repositorio
 FOUND_PRESETS=()
-for preset in "${PRESETS[@]}"; do
+for preset in "${SELECTED_PRESETS[@]}"; do
     if [[ -f "$SCRIPT_DIR/$preset" ]]; then
         FOUND_PRESETS+=("$preset")
     else
-        echo -e "${YELLOW}[AVISO] No se encontró el archivo opcional:${NC} $preset"
+        echo -e "${YELLOW}[AVISO] No se encontró el archivo:${NC} $preset"
     fi
 done
 
 if [[ ${#FOUND_PRESETS[@]} -eq 0 ]]; then
-    echo -e "${RED}[ERROR] No se encontró ningún archivo .json de preset en el directorio.${NC}"
+    echo -e "${RED}[ERROR] No se encontró ningún archivo .json válido para la opción seleccionada.${NC}"
     exit 1
 fi
 
@@ -68,16 +114,53 @@ install_to_path() {
     echo -e "${GREEN}[OK] Impulso (.irs) instalado en:${NC} $irs_dir\n"
 }
 
-INSTALLED_COUNT=0
+# Función para verificar dependencias LV2 en instalaciones nativas
+check_lv2_plugins() {
+    local lv2_dirs=("/usr/lib/lv2" "/usr/lib64/lv2" "/usr/local/lib/lv2" "$HOME/.lv2")
+    local has_lsp=0
+    local has_calf=0
 
-# 3. Detectar instalación Nativa (apt, pacman, dnf, etc.)
+    for dir in "${lv2_dirs[@]}"; do
+        if [[ -d "$dir" ]]; then
+            ls "$dir" 2>/dev/null | grep -qi "lsp-plugins" && has_lsp=1
+            ls "$dir" 2>/dev/null | grep -qi "calf" && has_calf=1
+        fi
+    done
+
+    if [[ $has_lsp -eq 0 || $has_calf -eq 0 ]]; then
+        echo -e "${YELLOW}[!] Verificación de dependencias LV2 (Instalación Nativa):${NC}"
+        [[ $has_lsp -eq 0 ]] && echo -e "  ${RED}✘ Falta LSP Plugins${NC} (necesario para Equalizer, Multiband Compressor, Convolver y Limiter)"
+        [[ $has_calf -eq 0 ]] && echo -e "  ${RED}✘ Falta Calf Studio Gear${NC} (necesario para Bass Enhancer, Reverb y Stereo Tools)"
+
+        echo -e "\n  Instálalos ejecutando el comando correspondiente a tu sistema:"
+        if command -v apt &> /dev/null; then
+            echo -e "  ${BLUE}sudo apt update && sudo apt install -y lsp-plugins-lv2 calf-plugins${NC}\n"
+        elif command -v pacman &> /dev/null; then
+            echo -e "  ${BLUE}sudo pacman -S lsp-plugins-lv2 calf${NC}\n"
+        elif command -v dnf &> /dev/null; then
+            echo -e "  ${BLUE}sudo dnf install lsp-plugins-lv2 calf${NC}\n"
+        elif command -v zypper &> /dev/null; then
+            echo -e "  ${BLUE}sudo zypper install lsp-plugins-lv2 calf${NC}\n"
+        else
+            echo -e "  ${BLUE}Instala 'lsp-plugins-lv2' y 'calf-plugins' desde tu gestor de paquetes.${NC}\n"
+        fi
+    else
+        echo -e "${GREEN}[OK] Plugins LV2 requeridos (LSP y Calf) detectados en el sistema.${NC}\n"
+    fi
+}
+
+INSTALLED_COUNT=0
+NATIVE_DETECTED=0
+
+# 4. Detectar instalación Nativa (apt, pacman, dnf, etc.)
 NATIVE_DIR="$HOME/.local/share/easyeffects"
 if command -v easyeffects &> /dev/null || [[ -d "$NATIVE_DIR" ]]; then
     install_to_path "$NATIVE_DIR" "Nativa (Sistema)"
     INSTALLED_COUNT=$((INSTALLED_COUNT + 1))
+    NATIVE_DETECTED=1
 fi
 
-# 4. Detectar instalación Flatpak
+# 5. Detectar instalación Flatpak
 FLATPAK_DIR="$HOME/.var/app/com.github.wwmm.easyeffects/data/easyeffects"
 if command -v flatpak &> /dev/null && flatpak list --app 2>/dev/null | grep -q "com.github.wwmm.easyeffects"; then
     install_to_path "$FLATPAK_DIR" "Flatpak"
@@ -87,7 +170,7 @@ elif [[ -d "$HOME/.var/app/com.github.wwmm.easyeffects" ]]; then
     INSTALLED_COUNT=$((INSTALLED_COUNT + 1))
 fi
 
-# 5. Fallback si Easy Effects aún no ha sido ejecutado o instalado
+# 6. Fallback si Easy Effects aún no ha sido ejecutado o instalado
 if [[ $INSTALLED_COUNT -eq 0 ]]; then
     echo -e "${YELLOW}[AVISO] No se detectó una instalación activa de Easy Effects.${NC}"
     echo -e "Se crearán las carpetas predeterminadas en ambas rutas para que estén listas al instalarlo:\n"
@@ -95,7 +178,12 @@ if [[ $INSTALLED_COUNT -eq 0 ]]; then
     install_to_path "$FLATPAK_DIR" "Flatpak (Por defecto)"
 fi
 
-# 6. Verificar si PipeWire está activo
+# 7. Ejecutar verificación de plugins LV2 si hay instalación nativa
+if [[ $NATIVE_DETECTED -eq 1 ]]; then
+    check_lv2_plugins
+fi
+
+# 8. Verificar si PipeWire está activo
 if command -v systemctl &> /dev/null; then
     if ! systemctl --user is-active --quiet pipewire; then
         echo -e "${YELLOW}[!] Advertencia: El servicio PipeWire no parece estar activo en esta sesión.${NC}"
@@ -104,7 +192,7 @@ if command -v systemctl &> /dev/null; then
 fi
 
 echo -e "${GREEN}¡Instalación completada con éxito!${NC}"
-echo -e "Abre ${BLUE}Easy Effects${NC} → pestaña ${BLUE}Salida (Output)${NC} → ${BLUE}Presets${NC} para cargar cualquiera de los perfiles instalados:\n"
+echo -e "Abre ${BLUE}Easy Effects${NC} → pestaña ${BLUE}Salida (Output)${NC} → ${BLUE}Presets${NC} para cargar:\n"
 for preset in "${FOUND_PRESETS[@]}"; do
     echo -e "  • ${YELLOW}${preset%.json}${NC}"
 done
