@@ -33,7 +33,7 @@
             "input-gain": -2.5,
             "left": {
                 "band0": {
-                    "frequency": 32.0,
+                    "frequency": 40.0,
                     "gain": 0.0,
                     "mode": "RLC (BT)",
                     "mute": false,
@@ -150,7 +150,7 @@
             "pitch-right": 0.0,
             "right": {
                 "band0": {
-                    "frequency": 32.0,
+                    "frequency": 40.0,
                     "gain": 0.0,
                     "mode": "RLC (BT)",
                     "mute": false,
