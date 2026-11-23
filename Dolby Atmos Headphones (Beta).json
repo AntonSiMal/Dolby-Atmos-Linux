@@ -1,12 +1,12 @@
 {
     "output": {
         "bass_enhancer#0": {
-            "amount": 2.5,
+            "amount": 1.5,
             "blend": 0.0,
             "bypass": false,
-            "floor": 25.0,
+            "floor": 30.0,
             "floor-active": true,
-            "harmonics": 2.5,
+            "harmonics": 2.0,
             "input-gain": 0.0,
             "output-gain": 0.0,
             "scope": 75.0
@@ -89,7 +89,7 @@
                 },
                 "band5": {
                     "frequency": 1000.0,
-                    "gain": -2.5,
+                    "gain": -1.5,
                     "mode": "RLC (BT)",
                     "mute": false,
                     "q": 1.41,
@@ -100,7 +100,7 @@
                 },
                 "band6": {
                     "frequency": 2000.0,
-                    "gain": -1.0,
+                    "gain": 0.0,
                     "mode": "RLC (BT)",
                     "mute": false,
                     "q": 1.41,
@@ -206,7 +206,7 @@
                 },
                 "band5": {
                     "frequency": 1000.0,
-                    "gain": -2.5,
+                    "gain": -1.5,
                     "mode": "RLC (BT)",
                     "mute": false,
                     "q": 1.41,
@@ -217,7 +217,7 @@
                 },
                 "band6": {
                     "frequency": 2000.0,
-                    "gain": -1.0,
+                    "gain": 0.0,
                     "mode": "RLC (BT)",
                     "mute": false,
                     "q": 1.41,
@@ -409,17 +409,18 @@
             "equalizer#0",
             "bass_enhancer#0",
             "multiband_compressor#0",
-            "stereo_tools#0",
             "convolver#0",
+            "stereo_tools#0",
             "limiter#0"
         ],
         "stereo_tools#0": {
             "balance-in": 0.0,
             "balance-out": 0.0,
             "bypass": false,
-            "delay": 0.15,
+            "delay": 0.0,
+            "dry": -100.0,
             "input-gain": 0.0,
-            "middle-level": -0.5,
+            "middle-level": 0.0,
             "middle-panorama": 0.0,
             "mode": "LR > LR (Stereo Default)",
             "mutel": false,
@@ -429,10 +430,11 @@
             "phaser": false,
             "sc-level": 1.0,
             "side-balance": 0.0,
-            "side-level": 2.5,
+            "side-level": 2.0,
             "softclip": false,
-            "stereo-base": 0.25,
-            "stereo-phase": 0.0
+            "stereo-base": 0.2,
+            "stereo-phase": 0.0,
+            "wet": 0.0
         }
     }
 }
