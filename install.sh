@@ -21,7 +21,17 @@ BETA_PRESETS=(
     "Dolby Atmos Space (beta).json"
 )
 
-IRS_FILE="Dolby ATMOS ((128K MP3)) 1.Default.irs"
+ALL_PRESETS=("${STABLE_PRESETS[@]}" "${BETA_PRESETS[@]}")
+
+# Impulsos soportados (actual MP3 + futuro nativo 48kHz)
+IRS_FILES=(
+    "Dolby ATMOS ((128K MP3)) 1.Default.irs"
+    "Dolby_Atmos_Native_48k.irs"
+)
+
+# Rutas de instalación de Easy Effects
+NATIVE_DIR="$HOME/.local/share/easyeffects"
+FLATPAK_DIR="$HOME/.var/app/com.github.wwmm.easyeffects/data/easyeffects"
 
 # Directorio donde se ejecuta este script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -30,29 +40,66 @@ echo -e "${BLUE}====================================================${NC}"
 echo -e "${BLUE}   Instalador de Dolby Atmos Preset - Easy Effects  ${NC}"
 echo -e "${BLUE}====================================================${NC}\n"
 
-# 1. Validar que el archivo de impulso (.irs) exista
-if [[ ! -f "$SCRIPT_DIR/$IRS_FILE" ]]; then
-    echo -e "${RED}[ERROR] No se encontró el archivo de impulso:${NC} $IRS_FILE"
-    echo -e "${YELLOW}Asegúrate de ejecutar ./install.sh desde la carpeta raíz del repositorio.${NC}"
-    exit 1
-fi
+# Función para desinstalar presets e impulsos de ambas rutas (Nativa y Flatpak)
+uninstall_presets() {
+    echo -e "${YELLOW}[*] Iniciando desinstalación de perfiles Dolby Atmos...${NC}\n"
+    local removed_total=0
 
-# 2. Selección de versión (por argumento o menú interactivo)
+    for base_dir in "$NATIVE_DIR" "$FLATPAK_DIR"; do
+        local output_dir="$base_dir/output"
+        local irs_dir="$base_dir/irs"
+        local removed_in_path=0
+
+        if [[ -d "$output_dir" ]]; then
+            for preset in "${ALL_PRESETS[@]}"; do
+                if [[ -f "$output_dir/$preset" ]]; then
+                    rm -f "$output_dir/$preset"
+                    echo -e "  ${RED}✘ Eliminado:${NC} $output_dir/$preset"
+                    removed_in_path=$((removed_in_path + 1))
+                fi
+            done
+        fi
+
+        if [[ -d "$irs_dir" ]]; then
+            for irs in "${IRS_FILES[@]}"; do
+                if [[ -f "$irs_dir/$irs" ]]; then
+                    rm -f "$irs_dir/$irs"
+                    echo -e "  ${RED}✘ Eliminado:${NC} $irs_dir/$irs"
+                    removed_in_path=$((removed_in_path + 1))
+                fi
+            done
+        fi
+
+        removed_total=$((removed_total + removed_in_path))
+    done
+
+    echo ""
+    if [[ $removed_total -gt 0 ]]; then
+        echo -e "${GREEN}[OK] Desinstalación completada ($removed_total archivos eliminados).${NC}"
+    else
+        echo -e "${YELLOW}[AVISO] No se encontraron archivos instalados de Dolby Atmos en el sistema.${NC}"
+    fi
+    exit 0
+}
+
+# 1. Selección de acción/versión (por argumento o menú interactivo)
 CHOICE="${1:-}"
 
 if [[ -z "$CHOICE" ]]; then
-    echo -e "${CYAN}Selecciona qué versión de los presets deseas instalar:${NC}"
-    echo -e "  ${GREEN}1)${NC} Versión Estable  (Dolby Atmos Headphones & Space)"
-    echo -e "  ${YELLOW}2)${NC} Versión Beta     (Arquitectura avanzada Mid/Side + Compresor Multibanda)"
-    echo -e "  ${BLUE}3)${NC} Ambas versiones  (Instala los 4 perfiles)"
-    echo -e "  ${RED}4)${NC} Cancelar\n"
-    read -rp "Opción [1-4]: " OPTION
+    echo -e "${CYAN}Selecciona una opción:${NC}"
+    echo -e "  ${GREEN}1)${NC} Instalar Versión Estable  (Dolby Atmos Headphones & Space)"
+    echo -e "  ${YELLOW}2)${NC} Instalar Versión Beta     (Arquitectura calibrada Mid/Side + High-Pass 40Hz)"
+    echo -e "  ${BLUE}3)${NC} Instalar Ambas versiones  (Instala los 4 perfiles)"
+    echo -e "  ${RED}4)${NC} Desinstalar perfiles      (Elimina los presets e impulsos instalados)"
+    echo -e "  ${NC}5)${NC} Cancelar\n"
+    read -rp "Opción [1-5]: " OPTION
 
     case "$OPTION" in
         1) CHOICE="--stable" ;;
         2) CHOICE="--beta" ;;
         3) CHOICE="--all" ;;
-        4) echo -e "\n${YELLOW}Instalación cancelada.${NC}"; exit 0 ;;
+        4) CHOICE="--uninstall" ;;
+        5) echo -e "\n${YELLOW}Operación cancelada.${NC}"; exit 0 ;;
         *) echo -e "\n${RED}[ERROR] Opción no válida.${NC}"; exit 1 ;;
     esac
     echo ""
@@ -69,15 +116,40 @@ case "$CHOICE" in
         echo -e "${YELLOW}[*] Modo seleccionado: Versión Beta${NC}\n"
         ;;
     --all|-a)
-        SELECTED_PRESETS=("${STABLE_PRESETS[@]}" "${BETA_PRESETS[@]}")
+        SELECTED_PRESETS=("${ALL_PRESETS[@]}")
         echo -e "${BLUE}[*] Modo seleccionado: Todas las versiones (Estable + Beta)${NC}\n"
+        ;;
+    --uninstall|-u)
+        uninstall_presets
+        ;;
+    --help|-h)
+        echo -e "Uso: ./install.sh [OPCIÓN]"
+        echo -e "  --stable, -s     Instala únicamente los perfiles Estables"
+        echo -e "  --beta, -b       Instala únicamente los perfiles Beta"
+        echo -e "  --all, -a        Instala los 4 perfiles (Estable + Beta)"
+        echo -e "  --uninstall, -u  Elimina todos los presets e impulsos instalados"
+        exit 0
         ;;
     *)
         echo -e "${RED}[ERROR] Parámetro desconocido:${NC} $CHOICE"
-        echo -e "Uso: ./install.sh [--stable | --beta | --all]"
+        echo -e "Uso: ./install.sh [--stable | --beta | --all | --uninstall]"
         exit 1
         ;;
 esac
+
+# 2. Validar que al menos un archivo de impulso (.irs) exista en el repositorio
+FOUND_IRS=()
+for irs in "${IRS_FILES[@]}"; do
+    if [[ -f "$SCRIPT_DIR/$irs" ]]; then
+        FOUND_IRS+=("$irs")
+    fi
+done
+
+if [[ ${#FOUND_IRS[@]} -eq 0 ]]; then
+    echo -e "${RED}[ERROR] No se encontró ningún archivo de impulso (.irs) en el repositorio.${NC}"
+    echo -e "${YELLOW}Asegúrate de ejecutar ./install.sh desde la carpeta raíz del repositorio.${NC}"
+    exit 1
+fi
 
 # 3. Validar que los archivos seleccionados existan en el repositorio
 FOUND_PRESETS=()
@@ -108,10 +180,12 @@ install_to_path() {
         cp -f "$SCRIPT_DIR/$preset" "$output_dir/"
     done
 
-    cp -f "$SCRIPT_DIR/$IRS_FILE" "$irs_dir/"
+    for irs in "${FOUND_IRS[@]}"; do
+        cp -f "$SCRIPT_DIR/$irs" "$irs_dir/"
+    done
 
     echo -e "${GREEN}[OK] ${#FOUND_PRESETS[@]} presets instalados en:${NC} $output_dir"
-    echo -e "${GREEN}[OK] Impulso (.irs) instalado en:${NC} $irs_dir\n"
+    echo -e "${GREEN}[OK] ${#FOUND_IRS[@]} impulso(s) (.irs) instalado(s) en:${NC} $irs_dir\n"
 }
 
 # Función para verificar dependencias LV2 en instalaciones nativas
@@ -153,7 +227,6 @@ INSTALLED_COUNT=0
 NATIVE_DETECTED=0
 
 # 4. Detectar instalación Nativa (apt, pacman, dnf, etc.)
-NATIVE_DIR="$HOME/.local/share/easyeffects"
 if command -v easyeffects &> /dev/null || [[ -d "$NATIVE_DIR" ]]; then
     install_to_path "$NATIVE_DIR" "Nativa (Sistema)"
     INSTALLED_COUNT=$((INSTALLED_COUNT + 1))
@@ -161,7 +234,6 @@ if command -v easyeffects &> /dev/null || [[ -d "$NATIVE_DIR" ]]; then
 fi
 
 # 5. Detectar instalación Flatpak
-FLATPAK_DIR="$HOME/.var/app/com.github.wwmm.easyeffects/data/easyeffects"
 if command -v flatpak &> /dev/null && flatpak list --app 2>/dev/null | grep -q "com.github.wwmm.easyeffects"; then
     install_to_path "$FLATPAK_DIR" "Flatpak"
     INSTALLED_COUNT=$((INSTALLED_COUNT + 1))
