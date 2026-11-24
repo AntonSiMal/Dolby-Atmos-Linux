@@ -28,7 +28,7 @@ El proyecto separa el procesamiento acústico según el dispositivo de salida, y
 
 ## ⚡ Instalación Rápida (Recomendada)
 
-El repositorio incluye un script automático (`install.sh`) que detecta si tienes Easy Effects instalado de forma **Nativa** o mediante **Flatpak**, verifica las dependencias LV2 del sistema y copia los archivos en los directorios exactos.
+El repositorio incluye un script automático (`install.sh`) que detecta si tienes Easy Effects instalado de forma **Nativa** o mediante **Flatpak**, verifica las dependencias LV2 del sistema y copia o desinstala los archivos en los directorios exactos.
 
 1. **Clona el repositorio:**
    ```bash
@@ -46,13 +46,15 @@ chmod +x install.sh
 
 
 
-### Opciones de instalación
+### Opciones de instalación y gestión
 
 Al ejecutar `./install.sh` sin argumentos se abrirá un menú interactivo, o puedes pasar directamente cualquiera de estas banderas:
 
 * `./install.sh --stable` (o `-s`): Instala únicamente los perfiles **Estables** (`Headphones` y `Space`).
 * `./install.sh --beta` (o `-b`): Instala únicamente los perfiles **Beta** con la arquitectura calibrada.
 * `./install.sh --all` (o `-a`): Instala los **4 perfiles** para alternar y comparar entre ellos.
+* `./install.sh --uninstall` (o `-u`): Elimina todos los presets (`.json`) e impulsos (`.irs`) del repositorio tanto en rutas **Nativas** como **Flatpak**, sin afectar tus perfiles personales.
+* `./install.sh --help` (o `-h`): Muestra la ayuda rápida de comandos en terminal.
 
 ---
 
@@ -135,24 +137,24 @@ A partir de ese momento, Easy Effects alternará automáticamente entre ambos pe
 
 | Problema | Causa y Solución |
 | --- | --- |
-| **El plugin "Convolver" aparece en rojo o sin efecto** | El archivo `Dolby ATMOS ((128K MP3)) 1.Default.irs` no está en la carpeta `irs/` correspondiente (Nativa o Flatpak). Ejecuta `./install.sh` para copiarlo en la ruta correcta. *(Nota: En los perfiles `Space` para altavoces, el Convolver está desactivado intencionalmente para evitar cancelación de fase en bocinas).* |
+| **El plugin "Convolver" aparece en rojo o sin efecto** | El archivo `.irs` no está en la carpeta `irs/` correspondiente (Nativa o Flatpak). Ejecuta `./install.sh` para copiarlo en la ruta correcta. *(Nota: En los perfiles `Space` para altavoces, el Convolver está desactivado intencionalmente para evitar cancelación de fase en bocinas).* |
 | **Un plugin aparece en gris / deshabilitado** | En instalaciones nativas faltan los motores LV2. Instala `lsp-plugins-lv2` y `calf-plugins` y reinicia el servicio con `easyeffects -q && easyeffects --gapplication-service &`. |
 | **Easy Effects no abre o no detecta audio** | Activa PipeWire en tu sesión ejecutando `systemctl --user --now enable pipewire pipewire-pulse wireplumber` y reinicia sesión. |
 | **Saturación en canciones con muchos graves** | En los perfiles Beta, el `input-gain` del ecualizador está calibrado (`-3.5 dB` en Headphones y `-2.5 dB` en Space) con limitador en `-0.5 dB`. Si tu fuente de audio ya viene saturada, baja ligeramente el volumen de la aplicación reproductora. |
 
 ---
 
-## 📄 Licencia y Contribución
+## 📄 Licencia y Aviso Legal
 
 Distribuido bajo la **MIT License**. Úsalo bajo tu propia responsabilidad y mantén volúmenes moderados para cuidar tu audición y tus equipos.
 
+*Aviso: "Dolby" y "Dolby Atmos" son marcas registradas de Dolby Laboratories. Este proyecto es una implementación independiente de código abierto y no está afiliado, patrocinado ni respaldado por Dolby Laboratories.*
+
 ¿Tienes sugerencias o ajustes calibrados para un modelo específico de audífonos o monitores? ¡Abre un **Issue** o envía un **Pull Request**!
 
-```
-
-<ElicitationsGroup message="Si deseas añadir algún extra antes de hacer el commit final:">
-  <Elicitation label="Agregar opción --uninstall al script install.sh" query="Agrega la opción --uninstall al menú y argumentos de install.sh para desinstalar los presets y el archivo .irs."/>
-  <Elicitation label="Crear plantilla de Issues para pruebas de hardware" query="Genera una plantilla corta de Issues en Markdown para que los usuarios reporten pruebas de hardware con los presets Beta."/>
+<ElicitationsGroup message="Para dar el siguiente paso en el repositorio:">
+  <Elicitation label="Crear generate_irs.py (Impulso nativo 48kHz/24-bit)" query="Escribe el script generate_irs.py en Python (usando numpy y scipy) para sintetizar nuestro archivo Dolby_Atmos_Native_48k.irs True Stereo de 4 canales y reemplazar el MP3."/>
+  <Elicitation label="Ver comandos Git para subir estos cambios" query="Dame los comandos exactos de git add, commit y push para subir los 4 JSON, install.sh y README.md actualizados a GitHub."/>
 </ElicitationsGroup>
 
 ```
